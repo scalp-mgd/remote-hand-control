@@ -1,0 +1,21 @@
+__pycache__/
+*.pyc
+.env
+*.wav
+.venv/
+venv/
+
+# Models (downloaded separately — too large for git)
+models/vosk-model-small-ru-0.22/
+models/vosk-model-small-ru.zip
+models/faster-whisper-medium/
+models/hand_landmarker.task
+models/gesture_classifier.onnx
+models/gesture_classifier.onnx.data
+models/keypoints.csv
+
+# Keep labels
+!models/gesture_labels.csv
+
+# IDE
+.claude/settings.local.json

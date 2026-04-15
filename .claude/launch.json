@@ -1,0 +1,30 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Remote Hand Control",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["main.py"]
+    },
+    {
+      "name": "Collect Gesture Data",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["training/collect_data.py"]
+    },
+    {
+      "name": "Train Classifier",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["training/train_classifier.py"]
+    },
+    {
+      "name": "Test Webcam",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["scripts/test_webcam.py"]
+    },
+    {
+      "name": "Test Audio",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["scripts/test_audio.py"]
+    }
+  ]
+}

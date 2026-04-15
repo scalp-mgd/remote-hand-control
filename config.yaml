@@ -1,0 +1,42 @@
+camera:
+  index: 0
+  width: 640
+  height: 480
+
+hand_tracking:
+  max_hands: 1
+  detection_confidence: 0.7
+  tracking_confidence: 0.5
+
+gesture:
+  model_path: "models/gesture_classifier.onnx"
+  labels_path: "models/gesture_labels.csv"
+  confidence_threshold: 0.8
+  debounce_frames: 3
+
+cursor:
+  smoothing_alpha: 0.12
+  sensitivity: 2.5             # higher = faster cursor movement
+
+actions:
+  cooldown_frames: 15
+  pinch_threshold: 0.06        # normalized distance thumb-index for click
+  mapping:
+    open_palm: move_cursor
+    fist: enter                # fist = Enter (send message)
+    one_finger_up: toggle_recording
+    # pinch (thumb+index) = click — detected by distance, no training needed
+
+stt:
+  vosk:
+    model_path: "models/vosk-model-small-ru-0.22"  # real-time streaming STT
+
+audio:
+  sample_rate: 16000
+  auto_stop_silence_sec: 3.0
+
+overlay:
+  show_landmarks: true
+  show_fps: true
+  show_gesture: true
+  show_recording_status: true
