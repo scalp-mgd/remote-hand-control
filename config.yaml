@@ -28,8 +28,11 @@ actions:
     # pinch (thumb+index) = click — detected by distance, no training needed
 
 stt:
-  vosk:
-    model_path: "models/vosk-model-small-ru-0.22"  # real-time streaming STT
+  # Groq Whisper large-v3-turbo — cloud STT (free tier, ~1s latency, top quality).
+  # Requires GROQ_API_KEY in .env (get a free key at https://console.groq.com).
+  groq:
+    model: "whisper-large-v3-turbo"
+    language: "ru"
 
 audio:
   sample_rate: 16000

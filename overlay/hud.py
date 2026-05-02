@@ -66,6 +66,7 @@ def draw_hud(
     status_message: str = "",
     partial_text: str = "",
     last_action: str = "",
+    is_transcribing: bool = False,
 ) -> np.ndarray:
     """Draw all HUD elements on the frame (mutates in place and returns it)."""
     h, w = frame.shape[:2]
@@ -123,17 +124,15 @@ def draw_hud(
             frame, "REC", (center_x - 15, 33),
             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2,
         )
+    elif is_transcribing:
+        # Yellow indicator while waiting for Groq response
+        center_x = w // 2
+        cv2.circle(frame, (center_x - 50, 25), 10, (0, 200, 255), -1)
+        cv2.putText(
+            frame, "Transcribing...", (center_x - 35, 33),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 200, 255), 2,
+        )
 
-        # Show listening indicator with word count below REC
-        if partial_text:
-            word_count = len(partial_text.split())
-            hint = f"Hearing {word_count} word{'s' if word_count != 1 else ''}..."
-            text_size = cv2.getTextSize(hint, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0]
-            x = (w - text_size[0]) // 2
-            cv2.putText(
-                frame, hint, (x, 55),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (150, 150, 255), 1,
-            )
 
     # Current action (bottom-center, large, color-coded)
     if last_action:

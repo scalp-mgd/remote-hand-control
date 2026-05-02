@@ -7,7 +7,10 @@ pyperclip>=1.8.2
 numpy>=1.24.0
 onnxruntime>=1.16.0
 pyyaml>=6.0
-vosk>=0.3.21
+
+# STT (Groq Whisper large-v3-turbo via cloud API)
+groq>=0.11.0
+python-dotenv>=1.0.0
 
 # Training (install separately)
 # torch>=2.0.0

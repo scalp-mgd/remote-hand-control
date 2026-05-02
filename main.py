@@ -7,14 +7,21 @@ import threading
 import time
 
 import cv2
+import numpy as np
 import yaml
+from dotenv import load_dotenv
 
 from core.cursor_controller import CursorController
 from core.gesture_classifier import GestureClassifier
 from core.hand_tracker import HandTracker
 from core.state_machine import StateMachine
-from core.voice_recorder import RealtimeVoiceRecorder
+from core.text_inserter import insert_text
+from core.transcriber import GroqTranscriber
+from core.voice_recorder import VoiceRecorder
 from overlay.hud import draw_hud, help_tooltip
+
+# Load .env (GROQ_API_KEY etc.) before any client construction
+load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -62,10 +69,34 @@ def main():
 
     stt_cfg = config.get("stt", {})
     a_cfg = config.get("audio", {})
-    recorder = RealtimeVoiceRecorder(
-        model_path=stt_cfg.get("vosk", {}).get("model_path", "models/vosk-model-small-ru-0.22"),
-        sample_rate=a_cfg.get("sample_rate", 16000),
+    sample_rate = a_cfg.get("sample_rate", 16000)
+    recorder = VoiceRecorder(sample_rate=sample_rate)
+
+    groq_cfg = stt_cfg.get("groq", {})
+    transcriber = GroqTranscriber(
+        model=groq_cfg.get("model", "whisper-large-v3-turbo"),
+        language=groq_cfg.get("language", "ru"),
     )
+
+    # Lock prevents two transcription jobs running in parallel (rare, but
+    # possible if user toggles recording faster than Groq responds).
+    transcribe_lock = threading.Lock()
+
+    def transcribe_and_paste(audio: np.ndarray):
+        """Run Groq transcription on a worker thread, paste the result."""
+
+        def _job():
+            with transcribe_lock:
+                recorder.set_transcribing(True)
+                try:
+                    text = transcriber.transcribe(audio, sample_rate=sample_rate)
+                    if text:
+                        insert_text(text + " ")
+                        logger.info("Pasted: %s", text[:120])
+                finally:
+                    recorder.set_transcribing(False)
+
+        threading.Thread(target=_job, daemon=True).start()
 
     act_cfg = config.get("actions", {})
     state_machine = StateMachine(
@@ -76,6 +107,7 @@ def main():
         debounce_frames=g_cfg.get("debounce_frames", 3),
         confidence_threshold=g_cfg.get("confidence_threshold", 0.8),
         pinch_threshold=act_cfg.get("pinch_threshold", 0.06),
+        on_recording_stopped=transcribe_and_paste,
     )
 
     overlay_cfg = config.get("overlay", {})
@@ -142,8 +174,9 @@ def main():
             state=state_machine.state.value,
             show_landmarks=overlay_cfg.get("show_landmarks", True),
             status_message=state_machine.status_message,
-            partial_text=recorder.partial_text,
+            partial_text="",
             last_action=state_machine.last_action,
+            is_transcribing=recorder.is_transcribing,
         )
 
         cv2.imshow("Remote Hand Control", frame)

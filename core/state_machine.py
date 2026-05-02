@@ -4,12 +4,13 @@ import enum
 import logging
 import math
 import time
-from typing import Optional
+from typing import Callable, Optional
 
+import numpy as np
 import pyautogui
 
 from core.cursor_controller import CursorController
-from core.voice_recorder import RealtimeVoiceRecorder
+from core.voice_recorder import VoiceRecorder
 
 logger = logging.getLogger(__name__)
 
@@ -24,16 +25,18 @@ class StateMachine:
     def __init__(
         self,
         cursor: CursorController,
-        recorder: RealtimeVoiceRecorder,
+        recorder: VoiceRecorder,
         action_mapping: dict[str, str] | None = None,
         cooldown_frames: int = 15,
         debounce_frames: int = 3,
         confidence_threshold: float = 0.8,
         pinch_threshold: float = 0.06,
+        on_recording_stopped: Optional[Callable[[np.ndarray], None]] = None,
     ):
         self.state = State.IDLE
         self._cursor = cursor
         self._recorder = recorder
+        self._on_recording_stopped = on_recording_stopped
 
         self._mapping = action_mapping or {
             "open_palm": "move_cursor",
@@ -287,7 +290,9 @@ class StateMachine:
 
         # === Other gesture: stop recording if active ===
         if self.state == State.RECORDING and label != "one_finger_up":
-            self._recorder.stop()
+            audio = self._recorder.stop()
+            if self._on_recording_stopped is not None:
+                self._on_recording_stopped(audio)
             self.state = State.IDLE
             self.status_message = "Done"
             self._set_action("REC STOP")
@@ -326,7 +331,9 @@ class StateMachine:
             if self._hand_lost_time is None:
                 self._hand_lost_time = time.time()
             elif time.time() - self._hand_lost_time > 1.5:
-                self._recorder.stop()
+                audio = self._recorder.stop()
+                if self._on_recording_stopped is not None:
+                    self._on_recording_stopped(audio)
                 self.state = State.IDLE
                 self.status_message = "Done"
                 logger.info("State: RECORDING -> IDLE (hand lost)")
